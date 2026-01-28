@@ -6,6 +6,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -193,8 +196,9 @@ func Generate(baseDir string) {
 		}
 	}
 
-	// Update 001_setup_schemas.sql
-	AddSchemaToSetupFile(filepath.Join(baseDir, "db/migrations/public/001_setup_schemas.sql"), schemaName)
+	// Create schema migration in public
+	publicMigrationDir := filepath.Join(baseDir, "db/migrations/public")
+	schemaMigrationFile := CreateSchemaMigration(publicMigrationDir, schemaName)
 
 	// Update cmd/reset.go
 	AddSchemaToResetCommand(filepath.Join(baseDir, "cmd/reset.go"), schemaName)
@@ -210,6 +214,10 @@ func Generate(baseDir string) {
 	fmt.Printf("  - %s/cache.go\n", cfg.OutputDir)
 	fmt.Printf("  - %s/README.md\n", cfg.OutputDir)
 
+	if schemaMigrationFile != "" {
+		fmt.Printf("  - %s\n", schemaMigrationFile)
+	}
+
 	if len(createdMigrations) > 0 {
 		fmt.Println("  - Migrations:")
 		for _, mig := range createdMigrations {
@@ -219,7 +227,6 @@ func Generate(baseDir string) {
 
 	fmt.Println()
 	fmt.Println("Updated:")
-	fmt.Println("  - db/migrations/public/001_setup_schemas.sql")
 	fmt.Println("  - cmd/reset.go")
 
 	fmt.Println()
@@ -271,18 +278,56 @@ func Generate(baseDir string) {
 	fmt.Println()
 }
 
-// AddSchemaToSetupFile adds a schema creation line to the setup file
-func AddSchemaToSetupFile(filePath, schemaName string) error {
-	content, _ := os.ReadFile(filePath)
-	contentStr := string(content)
-	schemaLine := fmt.Sprintf("create schema if not exists %s;", schemaName)
-
-	if strings.Contains(contentStr, schemaLine) {
-		return nil
+// GetNextMigrationNumber finds the highest migration number in a directory and returns next
+func GetNextMigrationNumber(migrationDir string) int {
+	entries, err := os.ReadDir(migrationDir)
+	if err != nil {
+		return 1
 	}
 
-	contentStr = strings.TrimRight(contentStr, "\n") + "\n" + schemaLine + "\n"
-	return os.WriteFile(filePath, []byte(contentStr), 0644)
+	re := regexp.MustCompile(`^(\d+)_`)
+	var numbers []int
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		matches := re.FindStringSubmatch(entry.Name())
+		if len(matches) > 1 {
+			if num, err := strconv.Atoi(matches[1]); err == nil {
+				numbers = append(numbers, num)
+			}
+		}
+	}
+
+	if len(numbers) == 0 {
+		return 1
+	}
+
+	sort.Ints(numbers)
+	return numbers[len(numbers)-1] + 1
+}
+
+// CreateSchemaMigration creates a new migration file for the schema
+func CreateSchemaMigration(migrationDir, schemaName string) string {
+	// Check if schema migration already exists
+	entries, _ := os.ReadDir(migrationDir)
+	for _, entry := range entries {
+		if strings.Contains(entry.Name(), fmt.Sprintf("create_schema_%s.sql", schemaName)) {
+			return "" // Already exists
+		}
+	}
+
+	nextNum := GetNextMigrationNumber(migrationDir)
+	fileName := fmt.Sprintf("%03d_create_schema_%s.sql", nextNum, schemaName)
+	filePath := filepath.Join(migrationDir, fileName)
+
+	content := fmt.Sprintf(`-- +migrate Up
+CREATE SCHEMA IF NOT EXISTS %s;
+`, schemaName)
+
+	WriteFile(filePath, content)
+	return filePath
 }
 
 // AddSchemaToResetCommand adds a schema drop line to the reset command
