@@ -1,4 +1,4 @@
-module github.com/taler/evmpunk
+module github.com/qtrix/evmpunk
 
 go 1.21
 

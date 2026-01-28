@@ -5,7 +5,7 @@ Ethereum indexer code generator. Generates complete indexer structure from ABI f
 ## Installation
 
 ```bash
-go get github.com/taler/evmpunk
+go get github.com/qtrix/evmpunk
 ```
 
 ## Usage
