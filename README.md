@@ -21,7 +21,7 @@ go get github.com/qtrix/evmpunk
 ```go
 package main
 
-import "github.com/taler/evmpunk"
+import "github.com/qtrix/evmpunk"
 
 func main() {
     // Run interactive generator
