@@ -10,7 +10,7 @@ go get github.com/qtrix/evmpunk
 
 ## Usage
 
-### As CLI (in taler/indexer project)
+### As CLI (in indexer project)
 
 ```bash
 ./indexer generate
