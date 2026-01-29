@@ -10,7 +10,7 @@ go get github.com/taler/evmpunk
 
 ## Usage
 
-### As CLI (in indexer project)
+### As CLI (in taler/indexer project)
 
 ```bash
 ./indexer generate
@@ -21,7 +21,7 @@ go get github.com/taler/evmpunk
 ```go
 package main
 
-import "github.com/qtrix/evmpunk"
+import "github.com/taler/evmpunk"
 
 func main() {
     // Run interactive generator
