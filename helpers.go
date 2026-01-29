@@ -7,6 +7,24 @@ import (
 	"strings"
 )
 
+// sqlReservedReplacements maps SQL reserved words to safe alternatives
+var sqlReservedReplacements = map[string]string{
+	"from":  "sender",
+	"to":    "receiver",
+	"user":  "user_address",
+	"index": "idx",
+	"order": "order_num",
+}
+
+// SafeColumnName returns a safe column name, replacing SQL reserved words
+func SafeColumnName(name string) string {
+	lower := strings.ToLower(name)
+	if replacement, ok := sqlReservedReplacements[lower]; ok {
+		return replacement
+	}
+	return name
+}
+
 // ToSnakeCase converts CamelCase to snake_case
 func ToSnakeCase(s string) string {
 	var result []rune

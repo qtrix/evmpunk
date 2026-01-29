@@ -166,17 +166,17 @@ func GenerateExecuteFile(cfg GeneratorConfig) string {
 			var fields []string
 			var pgxArgs []string
 
-			fields = append(fields, "included_in_block", "tx_hash", "tx_index", "log_index", "vault_address", "chain_id")
+			fields = append(fields, "included_in_block", "tx_hash", "tx_index", "log_index", "contract_address", "chain_id")
 			pgxArgs = append(pgxArgs,
 				`"included_in_block": i.block.Number`,
 				`"tx_hash": event.Raw.TxHash.Hex()`,
 				`"tx_index": event.Raw.TxIndex`,
 				`"log_index": event.Raw.Index`,
-				`"vault_address": utils.NormalizeAddress(event.Raw.Address.Hex())`,
+				`"contract_address": utils.NormalizeAddress(event.Raw.Address.Hex())`,
 				`"chain_id": 1`)
 
 			for _, f := range e.Fields {
-				col := ToSnakeCase(f.Name)
+				col := SafeColumnName(ToSnakeCase(f.Name))
 				fields = append(fields, col)
 
 				if f.Type == "address" {
@@ -328,11 +328,11 @@ func GenerateMigrationForEvent(schema string, event EventInfo) string {
 	cols = append(cols, "    tx_hash TEXT NOT NULL")
 	cols = append(cols, "    tx_index INTEGER NOT NULL")
 	cols = append(cols, "    log_index INTEGER NOT NULL")
-	cols = append(cols, "    vault_address TEXT NOT NULL")
+	cols = append(cols, "    contract_address TEXT NOT NULL")
 	cols = append(cols, "    chain_id INTEGER NOT NULL")
 
 	for _, f := range event.Fields {
-		cols = append(cols, fmt.Sprintf("    %s %s", ToSnakeCase(f.Name), ABITypeToSQL(f.Type)))
+		cols = append(cols, fmt.Sprintf("    %s %s", SafeColumnName(ToSnakeCase(f.Name)), ABITypeToSQL(f.Type)))
 	}
 
 	cols = append(cols, "    created_at TIMESTAMP DEFAULT NOW()")
@@ -340,7 +340,7 @@ func GenerateMigrationForEvent(schema string, event EventInfo) string {
 	var indices []string
 	indices = append(indices, fmt.Sprintf("CREATE INDEX idx_%s_%s_block ON %s.%s(included_in_block);", schema, tableName, schema, tableName))
 	indices = append(indices, fmt.Sprintf("CREATE INDEX idx_%s_%s_tx ON %s.%s(included_in_block, tx_index, log_index);", schema, tableName, schema, tableName))
-	indices = append(indices, fmt.Sprintf("CREATE INDEX idx_%s_%s_vault ON %s.%s(vault_address);", schema, tableName, schema, tableName))
+	indices = append(indices, fmt.Sprintf("CREATE INDEX idx_%s_%s_contract ON %s.%s(contract_address);", schema, tableName, schema, tableName))
 
 	return fmt.Sprintf(`-- +migrate Up
 CREATE TABLE IF NOT EXISTS %s.%s (
