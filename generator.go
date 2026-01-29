@@ -196,19 +196,25 @@ func Generate(baseDir string) {
 	if len(selectedEvents) > 0 {
 		os.MkdirAll(cfg.MigrationDir, 0755)
 
+		// Get next migration number based on existing files in the schema directory
+		nextMigNum := GetNextMigrationNumber(cfg.MigrationDir)
+
 		for i, event := range selectedEvents {
 			tableName := ToSnakeCase(event.Name) + "s"
 			migrationFile := filepath.Join(cfg.MigrationDir,
-				fmt.Sprintf("%03d_create_table_%s.sql", i+1, tableName))
+				fmt.Sprintf("%03d_create_table_%s.sql", nextMigNum+i, tableName))
 
 			WriteFile(migrationFile, GenerateMigrationForEvent(schemaName, event))
 			createdMigrations = append(createdMigrations, migrationFile)
 		}
 	}
 
-	// Create schema migration in public
-	publicMigrationDir := filepath.Join(baseDir, "db/migrations/public")
-	schemaMigrationFile := CreateSchemaMigration(publicMigrationDir, schemaName)
+	// Create schema migration in public (only if schema doesn't already exist)
+	var schemaMigrationFile string
+	if !SchemaExists(cfg.MigrationDir) {
+		publicMigrationDir := filepath.Join(baseDir, "db/migrations/public")
+		schemaMigrationFile = CreateSchemaMigration(publicMigrationDir, schemaName)
+	}
 
 	// Update cmd/reset.go
 	AddSchemaToResetCommand(filepath.Join(baseDir, "cmd/reset.go"), schemaName)

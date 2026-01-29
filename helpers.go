@@ -59,6 +59,21 @@ func CopyFile(src, dst string) error {
 	return os.WriteFile(dst, data, 0644)
 }
 
+// SchemaExists checks if a schema migration directory exists and has migration files
+func SchemaExists(migrationDir string) bool {
+	entries, err := os.ReadDir(migrationDir)
+	if err != nil {
+		return false
+	}
+	// Schema exists if directory has at least one .sql file
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
+			return true
+		}
+	}
+	return false
+}
+
 // DetectModulePath reads go.mod from baseDir and returns the module path
 func DetectModulePath(baseDir string) string {
 	goModPath := filepath.Join(baseDir, "go.mod")
