@@ -1,7 +1,9 @@
 package evmpunk
 
 import (
+	"bufio"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -55,4 +57,23 @@ func CopyFile(src, dst string) error {
 		return err
 	}
 	return os.WriteFile(dst, data, 0644)
+}
+
+// DetectModulePath reads go.mod from baseDir and returns the module path
+func DetectModulePath(baseDir string) string {
+	goModPath := filepath.Join(baseDir, "go.mod")
+	file, err := os.Open(goModPath)
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "module "))
+		}
+	}
+	return ""
 }

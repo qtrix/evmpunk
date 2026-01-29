@@ -146,6 +146,15 @@ func Generate(baseDir string) {
 		}
 	}
 
+	// Detect module path from go.mod
+	modulePath := DetectModulePath(baseDir)
+	if modulePath == "" {
+		fmt.Println("⚠️  Could not detect module path from go.mod")
+		fmt.Print("Module path (e.g., github.com/yourorg/yourproject): ")
+		modInput, _ := reader.ReadString('\n')
+		modulePath = strings.TrimSpace(modInput)
+	}
+
 	// Build config
 	cfg := GeneratorConfig{
 		Name:         name,
@@ -158,6 +167,7 @@ func Generate(baseDir string) {
 		Events:       selectedEvents,
 		OutputDir:    filepath.Join(baseDir, "indexers", packageName),
 		MigrationDir: filepath.Join(baseDir, "db/migrations", schemaName),
+		ModulePath:   modulePath,
 	}
 
 	// Generate files

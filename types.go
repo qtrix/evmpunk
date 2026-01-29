@@ -34,4 +34,5 @@ type GeneratorConfig struct {
 	Events       []EventInfo
 	OutputDir    string
 	MigrationDir string
+	ModulePath   string // e.g., "github.com/DigitalMOB2/base-indexer"
 }

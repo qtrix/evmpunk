@@ -19,7 +19,7 @@ func GenerateMainFile(cfg GeneratorConfig) string {
 	depsImport := ""
 	for _, d := range cfg.Dependencies {
 		if d == "preprocessor" || d == "preprocess" {
-			depsImport = `	"github.com/taler/indexer/indexers/preprocess"`
+			depsImport = fmt.Sprintf("\t%q", cfg.ModulePath+"/indexers/preprocess")
 		}
 	}
 
@@ -44,9 +44,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 %s
-	"github.com/taler/indexer/state"
-	"github.com/taler/indexer/telegram"
-	"github.com/taler/indexer/types"
+	"%s/state"
+	"%s/telegram"
+	"%s/types"
 )
 
 var log = logrus.WithField("module", "%s-indexer")
@@ -123,7 +123,7 @@ func (i *Indexer) Load(raw *types.RawData, deps map[string]interface{}) {
 		log.WithError(err).Error("Failed to refresh cache")
 	}
 }
-`, cfg.PackageName, depsImport, cfg.PackageName, cfg.IndexerID, cfg.Description, cfg.PackageName, depsStr, tablesStr, cfg.SchemaName)
+`, cfg.PackageName, depsImport, cfg.ModulePath, cfg.ModulePath, cfg.ModulePath, cfg.PackageName, cfg.IndexerID, cfg.Description, cfg.PackageName, depsStr, tablesStr, cfg.SchemaName)
 }
 
 // GenerateExecuteFile generates the execute.go file
@@ -216,8 +216,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 
-	"github.com/taler/indexer/ethtypes"
-	"github.com/taler/indexer/utils"
+	"%s/ethtypes"
+	"%s/utils"
 )
 
 func (i *Indexer) Execute(ctx context.Context) error {
@@ -255,7 +255,7 @@ func (i *Indexer) SaveToDatabase(ctx context.Context, tx pgx.Tx) error {
 
 	return nil
 }
-`, cfg.PackageName, cfg.PackageName, resultInitBlock, parseBlock, saveBlock)
+`, cfg.PackageName, cfg.ModulePath, cfg.ModulePath, cfg.PackageName, resultInitBlock, parseBlock, saveBlock)
 }
 
 // GenerateTypesFile generates the types.go file
@@ -274,12 +274,12 @@ func GenerateTypesFile(cfg GeneratorConfig) string {
 
 	return fmt.Sprintf(`package %s
 
-import "github.com/taler/indexer/ethtypes"
+import "%s/ethtypes"
 
 type Result struct {
 %s
 }
-`, cfg.PackageName, fieldsBlock)
+`, cfg.PackageName, cfg.ModulePath, fieldsBlock)
 }
 
 // GenerateCacheFile generates the cache.go file
